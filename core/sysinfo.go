@@ -33,12 +33,12 @@ func GetFlag() int {
 	Num := 0
 	if os.Getuid() == 0 {
 		Num += 8
-	} else if 32<<(^uint(0)>>63) == 64 {
+	}
+	if 32<<(^uint(0)>>63) == 64 {
 		Num += 4
-	} else if strings.Contains(runtime.GOARCH, "64") {
+	}
+	if strings.Contains(runtime.GOARCH, "64") {
 		Num += 2
-	} else {
-		Num += 1
 	}
 	return Num
 }

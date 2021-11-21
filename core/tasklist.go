@@ -123,10 +123,11 @@ func CANCEL(Data []byte) {
 
 func TRANSIT(Data []byte) {
 	if Conn, OK := Tunnel.Load(ByteToInt(Data[:4])); OK {
-		_, err := Conn.(net.Conn).Write(JoinBytes(_IntToByte(4, len(Data[4:])), Data[4:]))
+		_, err := Conn.(net.Conn).Write(JoinBytes([]byte(TCP_Header), _IntToByte(4, len(Data[4:])), Data[4:]))
 		if err != nil { UNLINK(Data[:4]); return }
 		MutexLock(func() {
 			Conn.(net.Conn).SetReadDeadline(time.Now().Add(1*time.Second))
+			ReadFrom(Conn.(net.Conn), len(TCP_Header))
 			Len := _ByteToInt(ReadFrom(Conn.(net.Conn), 4))
 			if Len < 1 || Len > 1048576 { return }
 			Buf := ReadFrom(Conn.(net.Conn), Len)
@@ -182,6 +183,7 @@ func REVERSE(Data []byte) {
 		Conn, err := ln.Accept()
 		if err != nil { continue }
 		Conn.SetReadDeadline(time.Now().Add(10*time.Second))
+		ReadFrom(Conn, len(TCP_Header))
 		Len := _ByteToInt(ReadFrom(Conn, 4))
 		if Len < 68 || Len > 133 { Conn.Close(); continue }
 		Buf := ReadFrom(Conn, Len)
@@ -196,6 +198,7 @@ func CONNECT(Data []byte) {
 	Port := ByteToInt(Data[:2])
 	Conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", Host, Port))
 	if err != nil { ERROR(err); return }
+	ReadFrom(Conn, len(TCP_Header))
 	Len := _ByteToInt(ReadFrom(Conn, 4))
 	if Len < 68 || Len > 133 { Conn.Close(); return }
 	Buf := ReadFrom(Conn, Len)

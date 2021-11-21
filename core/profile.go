@@ -42,5 +42,6 @@ var (
 		},
 	}
 	ProxyURL   = "socks5://admin:123456@127.0.0.1:1080"
+	TCP_Header = ""
 	Public_Key = "-----BEGIN PUBLIC KEY-----\nXXXYYYZZZ\n-----END PUBLIC KEY-----"
 )
